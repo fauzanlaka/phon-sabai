@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#4F46E5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0b0b1a" media="(prefers-color-scheme: dark)" />
+  <meta name="description" content="คำนวณค่างวดผ่อนโทรศัพท์ — ใส่ราคา ดอกเบี้ย จำนวนเดือน รู้ยอดผ่อนทันที" />
+
+  <title>ผ่อนสบาย — คำนวณค่างวดมือถือ</title>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ผ่อนสบาย" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <script>
+    // Apply theme before paint to avoid flash
+    (function () {
+      try {
+        var t = localStorage.getItem("phon-sabai:theme");
+        if (t === "dark" || t === "light") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <circle cx="11" cy="11" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+            <circle cx="21" cy="21" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M24 8L8 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>ผ่อนสบาย</h1>
+          <p>คำนวณค่างวดมือถือ</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="themeBtn" class="icon-btn" type="button" aria-label="สลับโหมดสว่าง/มืด">
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button id="installBtn" class="install-btn" hidden>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/>
+          </svg>
+          ติดตั้งแอป
+        </button>
+      </div>
+    </header>
+
+    <main class="card">
+      <section class="field">
+        <label for="price">ราคาสินค้า</label>
+        <div class="input-wrap">
+          <span class="prefix">฿</span>
+          <input
+            id="price"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="0"
+            value="29,900"
+          />
+        </div>
+      </section>
+
+      <section class="field">
+        <div class="field-head">
+          <label for="rate">ดอกเบี้ย <span class="muted">/ เดือน</span></label>
+        </div>
+        <div class="input-wrap">
+          <input
+            id="rate"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="0.00"
+            value="0.99"
+          />
+          <span class="suffix">%</span>
+        </div>
+        <div class="chips" data-target="rate">
+          <button type="button" data-val="0.59">0.59%</button>
+          <button type="button" data-val="0.79">0.79%</button>
+          <button type="button" data-val="0.99" class="active">0.99%</button>
+          <button type="button" data-val="1.25">1.25%</button>
+          <button type="button" data-val="1.49">1.49%</button>
+        </div>
+      </section>
+
+      <section class="field">
+        <div class="field-head">
+          <label for="months">จำนวนงวด</label>
+        </div>
+        <div class="input-wrap">
+          <input
+            id="months"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="0"
+            value="12"
+          />
+          <span class="suffix">เดือน</span>
+        </div>
+        <div class="chips" data-target="months">
+          <button type="button" data-val="6">6</button>
+          <button type="button" data-val="10">10</button>
+          <button type="button" data-val="12" class="active">12</button>
+          <button type="button" data-val="18">18</button>
+          <button type="button" data-val="24">24</button>
+          <button type="button" data-val="36">36</button>
+        </div>
+      </section>
+    </main>
+
+    <section class="result" id="result">
+      <div class="result-main">
+        <span class="result-label">ยอดผ่อน / เดือน</span>
+        <div class="result-amount">
+          <span class="currency">฿</span>
+          <span id="monthlyPayment">2,788</span>
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-item">
+          <span class="result-key">ดอกเบี้ย/เดือน</span>
+          <span class="result-val" id="monthlyInterest">฿296.01</span>
+        </div>
+        <div class="result-item">
+          <span class="result-key">ดอกเบี้ยรวม</span>
+          <span class="result-val" id="totalInterest">฿3,552</span>
+        </div>
+        <div class="result-item full">
+          <span class="result-key">ยอดรวมทั้งหมด</span>
+          <span class="result-val emphasize" id="totalAmount">฿33,452</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="copyBtn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="11" height="11" rx="2"/>
+            <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          </svg>
+          <span>คัดลอกสรุป</span>
+        </button>
+        <button type="button" id="resetBtn" class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 3-6.7"/>
+            <path d="M3 4v5h5"/>
+          </svg>
+          ล้าง
+        </button>
+      </div>
+    </section>
+
+    <section class="compare" id="compare">
+      <div class="compare-head">
+        <div>
+          <h2>เปรียบเทียบแผน</h2>
+          <span class="compare-sub" id="compareSub">ฐานราคา ฿29,900</span>
+        </div>
+        <button type="button" id="addPlanBtn" class="add-btn" aria-label="เพิ่มแผน">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span>เพิ่มแผน</span>
+        </button>
+      </div>
+
+      <div class="plans" id="plans" aria-live="polite"></div>
+
+      <button type="button" id="copyCompareBtn" class="btn btn-outline">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="11" height="11" rx="2"/>
+          <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+        </svg>
+        คัดลอกตารางเปรียบเทียบ
+      </button>
+    </section>
+
+    <template id="planRowTpl">
+      <div class="plan-row">
+        <div class="plan-badge">ถูกสุด</div>
+        <div class="plan-edit">
+          <div class="plan-field">
+            <input class="plan-months" type="text" inputmode="numeric" maxlength="3" />
+            <span>เดือน</span>
+          </div>
+          <span class="plan-times">×</span>
+          <div class="plan-field">
+            <input class="plan-rate" type="text" inputmode="decimal" maxlength="5" />
+            <span>%</span>
+          </div>
+        </div>
+        <div class="plan-result">
+          <div class="plan-monthly">
+            <span class="plan-currency">฿</span>
+            <span class="plan-amount">0</span>
+          </div>
+          <div class="plan-monthly-label">/ เดือน</div>
+        </div>
+        <div class="plan-meta">
+          <span>รวม <b class="plan-total">฿0</b></span>
+          <span class="plan-dot">·</span>
+          <span>ดอก <b class="plan-interest">฿0</b></span>
+        </div>
+        <button type="button" class="plan-remove" aria-label="ลบ">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M6 6l12 12M18 6l-12 12"/>
+          </svg>
+        </button>
+      </div>
+    </template>
+
+    <footer class="footer">
+      <span>ผ่อนสบาย · ดอกเบี้ยคงที่ (Flat rate)</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

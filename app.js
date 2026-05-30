@@ -96,10 +96,19 @@
     const rate = parseNum(rateEl.value);
     const months = parseNum(monthsEl.value);
 
+    // Empty state — show dashes until user fills the form
+    if (price <= 0 || months <= 0) {
+      monthlyPaymentEl.textContent = "—";
+      monthlyInterestEl.textContent = "—";
+      totalInterestEl.textContent = "—";
+      totalAmountEl.textContent = "—";
+      return;
+    }
+
     const monthlyInterest = price * (rate / 100);
     const totalInterest = monthlyInterest * months;
     const totalAmount = price + totalInterest;
-    const monthlyPayment = months > 0 ? totalAmount / months : 0;
+    const monthlyPayment = totalAmount / months;
 
     monthlyPaymentEl.textContent = fmtInt.format(Math.round(monthlyPayment));
     monthlyInterestEl.textContent = "฿" + fmt2.format(monthlyInterest);
@@ -285,6 +294,12 @@
   };
 
   const updateRowDisplay = (row, p, price) => {
+    if (price <= 0 || p.months <= 0) {
+      row.querySelector(".plan-amount").textContent = "—";
+      row.querySelector(".plan-total").textContent = "—";
+      row.querySelector(".plan-interest").textContent = "—";
+      return;
+    }
     const { monthlyPayment, totalInterest, totalAmount } = computePlan(price, p);
     row.querySelector(".plan-amount").textContent = fmtInt.format(Math.round(monthlyPayment));
     row.querySelector(".plan-total").textContent = "฿" + fmtInt.format(Math.round(totalAmount));

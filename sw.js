@@ -1,4 +1,4 @@
-const CACHE = "phon-sabai-v3";
+const CACHE = "phon-sabai-v4";
 const ASSETS = [
   "./",
   "./index.html",

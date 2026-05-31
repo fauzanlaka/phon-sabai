@@ -121,11 +121,34 @@
     totalAmountEl.textContent = "฿" + fmtInt.format(Math.round(totalAmount));
   };
 
+  const MAX_DOWN_PCT = 0.7;
+
+  const capDown = (silent = false) => {
+    const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
+    if (price > 0 && down > price * MAX_DOWN_PCT) {
+      const max = Math.floor(price * MAX_DOWN_PCT);
+      downEl.value = formatPrice(String(max));
+      if (!silent) showToast(`ดาวน์สูงสุด 70% = ฿${fmtInt.format(max)}`);
+    }
+  };
+
+  const updateDownChips = () => {
+    const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
+    document.querySelectorAll('.chips[data-target="down"] button[data-pct]').forEach((btn) => {
+      const val = price > 0 ? Math.floor(price * Number(btn.dataset.pct) / 100) : -1;
+      btn.classList.toggle("active", val > 0 && down === val);
+    });
+  };
+
   // Input formatters
   priceEl.addEventListener("input", () => {
     const caretAtEnd = priceEl.selectionStart === priceEl.value.length;
     priceEl.value = formatPrice(priceEl.value);
     if (caretAtEnd) priceEl.setSelectionRange(priceEl.value.length, priceEl.value.length);
+    capDown(true);
+    updateDownChips();
     calculate();
   });
 
@@ -133,6 +156,8 @@
     const caretAtEnd = downEl.selectionStart === downEl.value.length;
     downEl.value = formatPrice(downEl.value);
     if (caretAtEnd) downEl.setSelectionRange(downEl.value.length, downEl.value.length);
+    capDown();
+    updateDownChips();
     calculate();
   });
 
@@ -153,6 +178,20 @@
     el.addEventListener("focus", () => {
       setTimeout(() => el.select(), 0);
     });
+  });
+
+  // Down chips (percentage-based)
+  document.querySelector('.chips[data-target="down"]').addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-pct]");
+    if (!btn) return;
+    const price = parseNum(priceEl.value);
+    if (price <= 0) { showToast("ใส่ราคาสินค้าก่อน"); return; }
+    const val = Math.floor(price * Number(btn.dataset.pct) / 100);
+    downEl.value = formatPrice(String(val));
+    updateDownChips();
+    calculate();
+    refreshAllDisplays();
+    if ("vibrate" in navigator) navigator.vibrate(8);
   });
 
   // Chips
@@ -238,6 +277,7 @@
     rateEl.value = "";
     monthsEl.value = "";
     document.querySelectorAll(".chips button").forEach((b) => b.classList.remove("active"));
+    updateDownChips();
     plans = DEFAULT_PLANS.map((p) => ({ ...p }));
     savePlans();
     renderPlans();

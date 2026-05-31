@@ -2,6 +2,7 @@
   const $ = (id) => document.getElementById(id);
 
   const priceEl = $("price");
+  const downEl = $("down");
   const rateEl = $("rate");
   const monthsEl = $("months");
   const monthlyPaymentEl = $("monthlyPayment");
@@ -15,6 +16,7 @@
   const plansEl = $("plans");
   const addPlanBtn = $("addPlanBtn");
   const copyCompareBtn = $("copyCompareBtn");
+  const compareEl = $("compare");
   const compareSub = $("compareSub");
   const planRowTpl = $("planRowTpl");
   const themeBtn = $("themeBtn");
@@ -93,10 +95,12 @@
 
   const calculate = () => {
     const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
     const rate = parseNum(rateEl.value);
     const months = parseNum(monthsEl.value);
 
-    // Empty state — show dashes until user fills the form
+    compareEl.hidden = !(price > 0 && rate > 0 && months > 0);
+
     if (price <= 0 || months <= 0) {
       monthlyPaymentEl.textContent = "—";
       monthlyInterestEl.textContent = "—";
@@ -105,10 +109,11 @@
       return;
     }
 
-    const monthlyInterest = price * (rate / 100);
+    const financed = Math.max(0, price - down);
+    const monthlyInterest = financed * (rate / 100);
     const totalInterest = monthlyInterest * months;
     const totalAmount = price + totalInterest;
-    const monthlyPayment = totalAmount / months;
+    const monthlyPayment = months > 0 ? (financed + totalInterest) / months : 0;
 
     monthlyPaymentEl.textContent = fmtInt.format(Math.round(monthlyPayment));
     monthlyInterestEl.textContent = "฿" + fmt2.format(monthlyInterest);
@@ -121,6 +126,13 @@
     const caretAtEnd = priceEl.selectionStart === priceEl.value.length;
     priceEl.value = formatPrice(priceEl.value);
     if (caretAtEnd) priceEl.setSelectionRange(priceEl.value.length, priceEl.value.length);
+    calculate();
+  });
+
+  downEl.addEventListener("input", () => {
+    const caretAtEnd = downEl.selectionStart === downEl.value.length;
+    downEl.value = formatPrice(downEl.value);
+    if (caretAtEnd) downEl.setSelectionRange(downEl.value.length, downEl.value.length);
     calculate();
   });
 
@@ -137,7 +149,7 @@
   });
 
   // Select all on focus for fast editing
-  [priceEl, rateEl, monthsEl].forEach((el) => {
+  [priceEl, downEl, rateEl, monthsEl].forEach((el) => {
     el.addEventListener("focus", () => {
       setTimeout(() => el.select(), 0);
     });
@@ -168,21 +180,27 @@
   // Copy summary
   const buildSummary = () => {
     const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
     const rate = parseNum(rateEl.value);
     const months = parseNum(monthsEl.value);
-    const monthlyInterest = price * (rate / 100);
+    const financed = Math.max(0, price - down);
+    const monthlyInterest = financed * (rate / 100);
     const totalInterest = monthlyInterest * months;
     const totalAmount = price + totalInterest;
-    const monthlyPayment = months > 0 ? totalAmount / months : 0;
-    return [
+    const monthlyPayment = months > 0 ? (financed + totalInterest) / months : 0;
+    const lines = [
       "📱 สรุปค่างวด",
       `ราคาสินค้า: ฿${fmtInt.format(price)}`,
+    ];
+    if (down > 0) lines.push(`เงินดาวน์: ฿${fmtInt.format(down)}`, `ยอดจัด: ฿${fmtInt.format(financed)}`);
+    lines.push(
       `ดอกเบี้ย: ${rate}% × ${months} เดือน`,
       "—",
       `💸 ผ่อน ฿${fmtInt.format(Math.round(monthlyPayment))} / เดือน`,
       `รวมทั้งหมด ฿${fmtInt.format(Math.round(totalAmount))}`,
       `(ดอกเบี้ยรวม ฿${fmtInt.format(Math.round(totalInterest))})`,
-    ].join("\n");
+    );
+    return lines.join("\n");
   };
 
   const showToast = (msg) => {
@@ -216,9 +234,13 @@
 
   resetBtn.addEventListener("click", () => {
     priceEl.value = "";
+    downEl.value = "";
     rateEl.value = "";
     monthsEl.value = "";
     document.querySelectorAll(".chips button").forEach((b) => b.classList.remove("active"));
+    plans = DEFAULT_PLANS.map((p) => ({ ...p }));
+    savePlans();
+    renderPlans();
     calculate();
     priceEl.focus();
     if ("vibrate" in navigator) navigator.vibrate(8);
@@ -278,42 +300,52 @@
 
   let plans = loadPlans();
 
-  const computePlan = (price, p) => {
-    const monthlyInterest = price * (p.rate / 100);
+  const computePlan = (price, down, p) => {
+    const financed = Math.max(0, price - down);
+    const monthlyInterest = financed * (p.rate / 100);
     const totalInterest = monthlyInterest * p.months;
     const totalAmount = price + totalInterest;
-    const monthlyPayment = p.months > 0 ? totalAmount / p.months : 0;
+    const monthlyPayment = p.months > 0 ? (financed + totalInterest) / p.months : 0;
     return { monthlyInterest, totalInterest, totalAmount, monthlyPayment };
   };
 
   const updateCompareSub = () => {
     const price = parseNum(priceEl.value);
-    compareSub.textContent = price > 0
-      ? `ฐานราคา ฿${fmtInt.format(price)}`
-      : "ใส่ราคาสินค้าด้านบนเพื่อเปรียบเทียบ";
+    const down = parseNum(downEl.value);
+    if (price <= 0) {
+      compareSub.textContent = "ใส่ราคาสินค้าด้านบนเพื่อเปรียบเทียบ";
+    } else if (down > 0) {
+      const financed = Math.max(0, price - down);
+      compareSub.textContent = `ฐานราคา ฿${fmtInt.format(price)} · ยอดจัด ฿${fmtInt.format(financed)}`;
+    } else {
+      compareSub.textContent = `ฐานราคา ฿${fmtInt.format(price)}`;
+    }
   };
 
-  const updateRowDisplay = (row, p, price) => {
+  const updateRowDisplay = (row, p, price, down) => {
     if (price <= 0 || p.months <= 0) {
       row.querySelector(".plan-amount").textContent = "—";
       row.querySelector(".plan-total").textContent = "—";
       row.querySelector(".plan-interest").textContent = "—";
+      row.querySelector(".plan-monthly-interest").textContent = "—";
       return;
     }
-    const { monthlyPayment, totalInterest, totalAmount } = computePlan(price, p);
+    const { monthlyPayment, totalInterest, totalAmount, monthlyInterest } = computePlan(price, down, p);
     row.querySelector(".plan-amount").textContent = fmtInt.format(Math.round(monthlyPayment));
     row.querySelector(".plan-total").textContent = "฿" + fmtInt.format(Math.round(totalAmount));
     row.querySelector(".plan-interest").textContent = "฿" + fmtInt.format(Math.round(totalInterest));
+    row.querySelector(".plan-monthly-interest").textContent = "฿" + fmt2.format(monthlyInterest);
   };
 
   const updateBest = () => {
     const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
     let bestIdx = -1;
     let bestVal = Infinity;
     if (price > 0) {
       plans.forEach((p, i) => {
         if (p.months <= 0) return;
-        const { monthlyPayment } = computePlan(price, p);
+        const { monthlyPayment } = computePlan(price, down, p);
         if (monthlyPayment < bestVal) { bestVal = monthlyPayment; bestIdx = i; }
       });
     }
@@ -324,8 +356,9 @@
 
   const refreshAllDisplays = () => {
     const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
     plansEl.querySelectorAll(".plan-row").forEach((row, i) => {
-      if (plans[i]) updateRowDisplay(row, plans[i], price);
+      if (plans[i]) updateRowDisplay(row, plans[i], price, down);
     });
     updateBest();
     updateCompareSub();
@@ -345,7 +378,7 @@
       const idx = Number(node.dataset.idx);
       plans[idx].months = Number(monthsInput.value) || 0;
       savePlans();
-      updateRowDisplay(node, plans[idx], parseNum(priceEl.value));
+      updateRowDisplay(node, plans[idx], parseNum(priceEl.value), parseNum(downEl.value));
       updateBest();
     };
 
@@ -354,7 +387,7 @@
       const idx = Number(node.dataset.idx);
       plans[idx].rate = Number(rateInput.value) || 0;
       savePlans();
-      updateRowDisplay(node, plans[idx], parseNum(priceEl.value));
+      updateRowDisplay(node, plans[idx], parseNum(priceEl.value), parseNum(downEl.value));
       updateBest();
     };
 
@@ -399,6 +432,7 @@
 
   copyCompareBtn.addEventListener("click", async () => {
     const price = parseNum(priceEl.value);
+    const down = parseNum(downEl.value);
     if (price <= 0 || plans.length === 0) {
       showToast("ใส่ราคาสินค้าก่อน");
       return;
@@ -406,10 +440,11 @@
     const lines = [
       "📱 เปรียบเทียบแผนผ่อน",
       `ราคาสินค้า: ฿${fmtInt.format(price)}`,
-      "—",
     ];
+    if (down > 0) lines.push(`เงินดาวน์: ฿${fmtInt.format(down)}`, `ยอดจัด: ฿${fmtInt.format(Math.max(0, price - down))}`);
+    lines.push("—");
     plans.forEach((p) => {
-      const { monthlyPayment, totalAmount, totalInterest } = computePlan(price, p);
+      const { monthlyPayment, totalAmount, totalInterest } = computePlan(price, down, p);
       lines.push(`• ${p.months} เดือน @ ${p.rate}% → ฿${fmtInt.format(Math.round(monthlyPayment))}/ด.`);
       lines.push(`  รวม ฿${fmtInt.format(Math.round(totalAmount))} (ดอก ฿${fmtInt.format(Math.round(totalInterest))})`);
     });
@@ -433,8 +468,9 @@
     }
   });
 
-  // Refresh compare displays when price changes (doesn't touch input values)
+  // Refresh compare displays when price or down changes
   priceEl.addEventListener("input", refreshAllDisplays);
+  downEl.addEventListener("input", refreshAllDisplays);
 
   // Initial render
   calculate();

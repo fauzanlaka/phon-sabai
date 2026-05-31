@@ -86,6 +86,20 @@
       </section>
 
       <section class="field">
+        <label for="down">เงินดาวน์ <span class="muted">(ถ้ามี)</span></label>
+        <div class="input-wrap">
+          <span class="prefix">฿</span>
+          <input
+            id="down"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="0"
+          />
+        </div>
+      </section>
+
+      <section class="field">
         <div class="field-head">
           <label for="rate">ดอกเบี้ย <span class="muted">/ เดือน</span></label>
         </div>
@@ -175,7 +189,7 @@
       </div>
     </section>
 
-    <section class="compare" id="compare">
+    <section class="compare" id="compare" hidden>
       <div class="compare-head">
         <div>
           <h2>เปรียบเทียบแผน</h2>
@@ -224,7 +238,9 @@
         <div class="plan-meta">
           <span>รวม <b class="plan-total">฿0</b></span>
           <span class="plan-dot">·</span>
-          <span>ดอก <b class="plan-interest">฿0</b></span>
+          <span>ดอกรวม <b class="plan-interest">฿0</b></span>
+          <span class="plan-dot">·</span>
+          <span>ดอก/ด. <b class="plan-monthly-interest">฿0</b></span>
         </div>
         <button type="button" class="plan-remove" aria-label="ลบ">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">

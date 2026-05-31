@@ -10,6 +10,7 @@
   const monthlyInterestEl = $("monthlyInterest");
   const totalInterestEl = $("totalInterest");
   const totalAmountEl = $("totalAmount");
+  const resultEl = $("result");
   const copyBtn = $("copyBtn");
   const resetBtn = $("resetBtn");
   const installBtn = $("installBtn");
@@ -108,15 +109,11 @@
     const rate = parseNum(rateEl.value);
     const months = parseNum(monthsEl.value);
 
+    const hasResult = price > 0 && months > 0;
+    resultEl.hidden = !hasResult;
     compareEl.hidden = !(price > 0 && rate > 0 && months > 0);
 
-    if (price <= 0 || months <= 0) {
-      monthlyPaymentEl.textContent = "—";
-      monthlyInterestEl.textContent = "—";
-      totalInterestEl.textContent = "—";
-      totalAmountEl.textContent = "—";
-      return;
-    }
+    if (!hasResult) return;
 
     const financed = Math.max(0, price - down);
     const monthlyInterest = financed * (rate / 100);

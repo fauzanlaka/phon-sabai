@@ -3,6 +3,7 @@
 
   const priceEl = $("price");
   const downEl = $("down");
+  const downPctEl = $("downPct");
   const rateEl = $("rate");
   const monthsEl = $("months");
   const monthlyPaymentEl = $("monthlyPayment");
@@ -88,6 +89,14 @@
     return v;
   };
 
+  const formatPct = (s) => {
+    let v = String(s).replace(/[^0-9.]/g, "");
+    const parts = v.split(".");
+    if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
+    if (parts[1]?.length > 2) v = parts[0] + "." + parts[1].slice(0, 2);
+    return v;
+  };
+
   const formatMonths = (s) => {
     const digits = String(s).replace(/[^0-9]/g, "").slice(0, 3);
     return digits;
@@ -133,13 +142,31 @@
     }
   };
 
+  const PRESET_PCTS = [10, 20, 70];
+
   const updateDownChips = () => {
     const price = parseNum(priceEl.value);
     const down = parseNum(downEl.value);
+
+    let matchedPreset = false;
     document.querySelectorAll('.chips[data-target="down"] button[data-pct]').forEach((btn) => {
       const val = price > 0 ? Math.floor(price * Number(btn.dataset.pct) / 100) : -1;
-      btn.classList.toggle("active", val > 0 && down === val);
+      const isActive = val > 0 && down === val;
+      btn.classList.toggle("active", isActive);
+      if (isActive) matchedPreset = true;
     });
+
+    // Sync custom % input (skip when user is actively typing in it)
+    const chipPctEl = downPctEl.closest(".chip-pct");
+    if (!downPctEl.matches(":focus")) {
+      if (price > 0 && down > 0) {
+        const pct = down / price * 100;
+        downPctEl.value = parseFloat(pct.toFixed(2)).toString();
+      } else {
+        downPctEl.value = "";
+      }
+    }
+    chipPctEl.classList.toggle("active", !matchedPreset && down > 0);
   };
 
   // Input formatters
@@ -179,6 +206,26 @@
       setTimeout(() => el.select(), 0);
     });
   });
+
+  // Custom % input
+  downPctEl.addEventListener("input", () => {
+    downPctEl.value = formatPct(downPctEl.value);
+    const price = parseNum(priceEl.value);
+    const pct = parseNum(downPctEl.value);
+    if (price <= 0) return;
+    if (pct > MAX_DOWN_PCT * 100) {
+      downPctEl.value = String(MAX_DOWN_PCT * 100);
+      showToast(`ดาวน์สูงสุด 70% = ฿${fmtInt.format(Math.floor(price * MAX_DOWN_PCT))}`);
+    }
+    const cappedPct = Math.min(pct, MAX_DOWN_PCT * 100);
+    downEl.value = cappedPct > 0 ? formatPrice(String(Math.floor(price * cappedPct / 100))) : "";
+    updateDownChips();
+    calculate();
+    refreshAllDisplays();
+  });
+
+  downPctEl.addEventListener("blur", () => updateDownChips());
+  downPctEl.addEventListener("focus", () => setTimeout(() => downPctEl.select(), 0));
 
   // Down chips (percentage-based)
   document.querySelector('.chips[data-target="down"]').addEventListener("click", (e) => {
